@@ -52,7 +52,8 @@ module.exports = async (req, res) => {
 
     const geminiData = await geminiRes.json();
     console.log("Gemini raw response:", geminiData);
-
+    // 🟢 Đây là dòng bị thiếu
+    const summary = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!summary) return res.status(500).json({ error: 'Gemini không trả về nội dung', raw: geminiData });
 
     return res.status(200).json({ summary });
