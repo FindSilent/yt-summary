@@ -3,7 +3,20 @@ const { JSDOM } = require('jsdom');
 const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  // 🛡️ Thêm CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // ✅ Xử lý preflight request từ browser
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // ❌ Chỉ chấp nhận POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   const apiKey = process.env.GEMINI_API_KEY;
   const { url } = req.body;
@@ -13,11 +26,14 @@ module.exports = async (req, res) => {
   try {
     let textContent = '';
 
+    // 📺 Nếu là YouTube
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
       const videoId = extractYouTubeId(url);
       const transcript = await fetchTranscript(videoId);
       textContent = transcript || '';
-    } else {
+    } 
+    // 🌐 Nếu là bài viết thường
+    else {
       const page = await fetch(url);
       const html = await page.text();
       const dom = new JSDOM(html, { url });
@@ -27,6 +43,7 @@ module.exports = async (req, res) => {
 
     if (!textContent) return res.status(500).json({ error: 'Không thể lấy nội dung từ URL' });
 
+    // 🤖 Gửi đến Gemini
     const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -46,7 +63,7 @@ module.exports = async (req, res) => {
   }
 };
 
-// 📺 Hàm lấy transcript YouTube bằng API open-source
+// 📺 Hàm lấy transcript YouTube
 async function fetchTranscript(videoId) {
   try {
     const res = await fetch(`https://yt.lemnoslife.com/videos?part=transcript&id=${videoId}`);
@@ -57,6 +74,7 @@ async function fetchTranscript(videoId) {
   }
 }
 
+// 🎯 Trích ID từ URL YouTube
 function extractYouTubeId(url) {
   const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
   return match ? match[1] : '';
