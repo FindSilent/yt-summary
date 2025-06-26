@@ -1,7 +1,8 @@
-import { Readability } from '@mozilla/readability';
-import { JSDOM } from 'jsdom';
+const { Readability } = require('@mozilla/readability');
+const { JSDOM } = require('jsdom');
+const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const apiKey = process.env.GEMINI_API_KEY;
@@ -12,14 +13,11 @@ export default async function handler(req, res) {
   try {
     let textContent = '';
 
-    // 1. YouTube
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
       const videoId = extractYouTubeId(url);
       const transcript = await fetchTranscript(videoId);
       textContent = transcript || '';
-    }
-    // 2. Bài viết thường
-    else {
+    } else {
       const page = await fetch(url);
       const html = await page.text();
       const dom = new JSDOM(html, { url });
@@ -29,7 +27,6 @@ export default async function handler(req, res) {
 
     if (!textContent) return res.status(500).json({ error: 'Không thể lấy nội dung từ URL' });
 
-    // 3. Gửi đến Gemini
     const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -44,9 +41,10 @@ export default async function handler(req, res) {
     return res.status(200).json({ summary });
 
   } catch (err) {
+    console.error("Lỗi server:", err);
     return res.status(500).json({ error: err.message });
   }
-}
+};
 
 // 📺 Hàm lấy transcript YouTube bằng API open-source
 async function fetchTranscript(videoId) {
@@ -59,7 +57,6 @@ async function fetchTranscript(videoId) {
   }
 }
 
-// 🎯 Trích ID từ URL YouTube
 function extractYouTubeId(url) {
   const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
   return match ? match[1] : '';
