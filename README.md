@@ -9,4 +9,4 @@
 2. Deploy `proxy/` lên Vercel (project Node.js).
 3. Cấu hình biến `GEMINI_API_KEY` trên Vercel.
 4. Sử dụng shortcode: `[yt_summary]`
-5. 5. Chức năng lấy transcript từ Youtube chưa hoàn thiện, hiện tại chỉ lấy nội dung từ link web.
+5. Chức năng lấy transcript từ Youtube chưa hoàn thiện, hiện tại chỉ lấy nội dung từ link web.
